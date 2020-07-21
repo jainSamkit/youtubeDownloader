@@ -1,18 +1,30 @@
 package main
 
 import (
-	"fmt"
-
-	"github.com/jainSamkit/youtubeDownloader/videoinfo"
+	"github.com/jainSamkit/youtubeDownloader/models/ytdownloader"
 )
 
 func main() {
 
 	s := "https://www.youtube.com/watch?v=zEmtfA8FETc"
 
-	videoID := videoinfo.GetVideoID(s)
+	d := ytdownloader.New(s)
 
-	fmt.Println(videoID)
+	d.Downloadvideo()
+
+	// videoID := videoinfo.GetVideoID(s)
+
+	// if len(videoID) > 0 {
+	// 	//start downloading videos here
+	// 	//call youtube downloader class to download the video
+
+	// 	var a [10]int
+	// 	for i := 0; i < len(a); i++ {
+	// 		fmt.Println(a[i])
+	// 	}
+	// } else {
+	// 	fmt.Println("No URL found")
+	// }
 
 	// // fmt.Println(s)
 	// // k := utils.Splitter(s, "?")
