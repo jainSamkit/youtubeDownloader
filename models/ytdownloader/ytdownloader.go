@@ -1,48 +1,103 @@
 package ytdownloader
 
 import (
-	"encoding/json"
-	"fmt"
+	"regexp"
+
+	"github.com/jainSamkit/youtubeDownloader/utils"
 
 	"github.com/jainSamkit/youtubeDownloader/models/browser"
-	"github.com/jainSamkit/youtubeDownloader/utils"
-	"github.com/jainSamkit/youtubeDownloader/videoinfo"
+	"github.com/jainSamkit/youtubeDownloader/types"
 )
 
 //Ytdownloader is a skeleton for the downloader object
 type Ytdownloader struct {
-	videoID       string
-	url           string
-	browser       browser.Browser
-	videopageHTML string
-	playerRes     string
+	videoID         string
+	videoURL        string
+	browser         browser.Browser
+	videopageHTML   string
+	signaturefileJS string
+
+	//videolinkinfo to process the streaming data
+	videolinkinfo types.VideoLinkInfo
+
+	//collection of videos with url,tag and video format(mp4...)
+	videotiles []types.VideoTile
+
+	//response struct
+	resPipe utils.ResponsePipe
+}
+
+//GetVideoID mines for the video ID from the youtube URL
+func (d *Ytdownloader) GetVideoID(url string) string {
+
+	r, _ := regexp.Compile(`v=[\w]{11}`)
+
+	return r.FindString(url)
+}
+
+func (d *Ytdownloader) parseStreamingData() {
+
+	streamingData := d.videolinkinfo.StreamingData
+
+	formats := streamingData.(map[string]interface{})["formats"]
+	adaptiveFormats := streamingData.(map[string]interface{})["adaptiveFormats"]
+
+	allformats := append(formats.([]interface{}), adaptiveFormats.([]interface{})...)
+
+	if len(allformats) == 0 {
+		d.resPipe.Success = false
+		d.resPipe.SetError("No video formats found!")
+		return
+	}
+
+	//iterate over the formats and append info to the result
+
+	for k := range allformats {
+		var tile types.VideoTile
+		tile.SetInfo(allformats[k].(map[string]interface{}), d.signaturefileJS)
+		d.videotiles = append(d.videotiles, tile)
+	}
+
+	d.resPipe.Success = true
+	d.resPipe.SetError("None!")
+	d.resPipe.Info = "All video tiles are set!"
 }
 
 //New function creates an usable downloader
 func New(url string) *Ytdownloader {
-	d := Ytdownloader{url: url}
-	d.videoID = videoinfo.GetVideoID(url)
-
+	d := Ytdownloader{videoURL: url}
+	d.videoID = d.GetVideoID(url)
+	d.videopageHTML = ""
+	d.signaturefileJS = ""
 	return &d
 }
 
 //Downloadvideo gets the links to download video and starts the download.
 //If the download fails returns failure
 func (d *Ytdownloader) Downloadvideo() {
-	d.videopageHTML = d.browser.Get(d.url)
+	if len(d.videoURL) == 0 {
+		// print("No url found!")
+		return
+	}
+	d.videopageHTML = d.browser.Get(d.videoURL)
 
-	//write the html content in a file
-	directoryname := "C:/Users/samkit jain/Desktop/goprojects/videohtmlfiles/"
-	filename := directoryname + d.videoID
-	utils.WriteinFile(filename, d.videopageHTML)
+	//set the video link information
+	d.videolinkinfo.SetVideoLinkInfo(d.videopageHTML)
 
-	d.playerRes = videoinfo.GetPlayerResponse(d.videopageHTML)
-	strB, _ := json.Marshal(d.playerRes)
-	fmt.Printf("The type of strb is %T\n", strB)
+	//set the signature js url
+	d.videolinkinfo.SetSignatureJSURL(d.videopageHTML)
 
-	fmt.Println("ok")
-	filename += "video_repsonse"
-	// utils.WriteinFile(filename, strB)
-	utils.WriteBytesinFile(filename, strB)
-	// utils.WriteinFile(filename, d.playerRes)
+	//fetch the js file that contains the signatute encoding info
+	// if d.videolinkinfo.SignatureJSURL != "" {
+	// 	d.signaturefileJS = d.browser.Get(d.videolinkinfo.SignatureJSURL)
+	// }
+
+	//extract all the links from the
+	d.parseStreamingData()
 }
+
+// directoryname := "C:/Users/samkit jain/Desktop/goprojects/videohtmlfiles/"
+// filename := directoryname + d.videoID
+// utils.WriteinFile(filename, d.videopageHTML)
+
+// d.playerRes = videoinfo.GetPlayerResponse(d.videopageHTML)

@@ -20,5 +20,5 @@ func (b *Browser) Get(url string) string {
 
 	// fmt.Println(string(body))
 
-	return (string)(body)
+	return string(body)
 }
