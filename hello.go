@@ -6,7 +6,8 @@ import (
 
 func main() {
 
-	s := "https://www.youtube.com/watch?v=gOMhN-hfMtY"
+	// s := "https://www.youtube.com/watch?v=gOMhN-hfMtY"
+	s := "https://www.youtube.com/watch?v=BS4Anse_wzs"
 
 	d := ytdownloader.New(s)
 

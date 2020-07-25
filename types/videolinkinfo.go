@@ -2,7 +2,6 @@ package types
 
 import (
 	"encoding/json"
-	"fmt"
 	"regexp"
 	"strings"
 
@@ -11,9 +10,8 @@ import (
 
 //VideoLinkInfo structure to hold all the video link related information
 type VideoLinkInfo struct {
-	VideolinkJSON  string
-	StreamingData  interface{}
-	SignatureJSURL string
+	VideolinkJSON string
+	StreamingData interface{}
 }
 
 //GetVideoLinkJSON selects the player response from the page html.
@@ -71,8 +69,8 @@ func (v *VideoLinkInfo) SetVideoLinkInfo(videohtml string) utils.ResponsePipe {
 	return resPipe
 }
 
-//SetSignatureJSURL sets the loc of sig function js file
-func (v *VideoLinkInfo) SetSignatureJSURL(videohtml string) {
+//GetSignatureJSURL sets the loc of sig function js file
+func (v *VideoLinkInfo) GetSignatureJSURL(videohtml string) string {
 
 	//extract the script url
 	r, _ := regexp.Compile(`<script\s*src="[^"]+player[^"]+js"`)
@@ -90,14 +88,15 @@ func (v *VideoLinkInfo) SetSignatureJSURL(videohtml string) {
 	r3, _ := regexp.Compile(`"`)
 	scriptURL = r3.ReplaceAllString(scriptURL, "")
 
+	var sigjsURL string
 	//check for relative url scheme
 	if strings.Index(scriptURL, "//") == 0 {
-		v.SignatureJSURL = "http:" + scriptURL
+		sigjsURL = "http:" + scriptURL
 	} else if strings.Index(scriptURL, "/") == 0 {
-		v.SignatureJSURL = "http://www.youtube.com" + scriptURL
+		sigjsURL = "http://www.youtube.com" + scriptURL
 	} else {
-		v.SignatureJSURL = ""
+		sigjsURL = ""
 	}
 
-	fmt.Println(v.SignatureJSURL)
+	return sigjsURL
 }

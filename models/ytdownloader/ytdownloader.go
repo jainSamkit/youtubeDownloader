@@ -1,21 +1,22 @@
 package ytdownloader
 
 import (
+	"fmt"
 	"regexp"
 
-	"github.com/jainSamkit/youtubeDownloader/utils"
-
 	"github.com/jainSamkit/youtubeDownloader/models/browser"
+	"github.com/jainSamkit/youtubeDownloader/models/signaturedecoder"
 	"github.com/jainSamkit/youtubeDownloader/types"
+	"github.com/jainSamkit/youtubeDownloader/utils"
 )
 
 //Ytdownloader is a skeleton for the downloader object
 type Ytdownloader struct {
-	videoID         string
-	videoURL        string
-	browser         browser.Browser
-	videopageHTML   string
-	signaturefileJS string
+	videoID        string
+	videoURL       string
+	browser        browser.Browser
+	videopageHTML  string
+	signatureJSURL string
 
 	//videolinkinfo to process the streaming data
 	videolinkinfo types.VideoLinkInfo
@@ -25,6 +26,9 @@ type Ytdownloader struct {
 
 	//response struct
 	resPipe utils.ResponsePipe
+
+	//signatureDecoder
+	signaturedecoder signaturedecoder.SignatureDecoder
 }
 
 //GetVideoID mines for the video ID from the youtube URL
@@ -50,11 +54,13 @@ func (d *Ytdownloader) parseStreamingData() {
 		return
 	}
 
+	fmt.Println("The length of formats is ", len(allformats))
+
 	//iterate over the formats and append info to the result
 
 	for k := range allformats {
 		var tile types.VideoTile
-		tile.SetInfo(allformats[k].(map[string]interface{}), d.signaturefileJS)
+		tile.SetInfo(allformats[k].(map[string]interface{}), &(d.signaturedecoder))
 		d.videotiles = append(d.videotiles, tile)
 	}
 
@@ -68,7 +74,7 @@ func New(url string) *Ytdownloader {
 	d := Ytdownloader{videoURL: url}
 	d.videoID = d.GetVideoID(url)
 	d.videopageHTML = ""
-	d.signaturefileJS = ""
+	d.signatureJSURL = ""
 	return &d
 }
 
@@ -85,19 +91,18 @@ func (d *Ytdownloader) Downloadvideo() {
 	d.videolinkinfo.SetVideoLinkInfo(d.videopageHTML)
 
 	//set the signature js url
-	d.videolinkinfo.SetSignatureJSURL(d.videopageHTML)
+	d.signatureJSURL = d.videolinkinfo.GetSignatureJSURL(d.videopageHTML)
 
 	//fetch the js file that contains the signatute encoding info
-	// if d.videolinkinfo.SignatureJSURL != "" {
-	// 	d.signaturefileJS = d.browser.Get(d.videolinkinfo.SignatureJSURL)
-	// }
+	if d.signatureJSURL != "" {
+		d.signaturedecoder.SignaturefileJS = d.browser.Get(d.signatureJSURL)
+		d.signaturedecoder.ExtractDecoder()
+		// fmt.Println("The length of sig is ", len(d.signaturedecoder.SignaturefileJS))
+		// directoryname := "C:/Users/samkit jain/Desktop/goprojects/videohtmlfiles/"
+		// filename := directoryname + "videojs"
+		// utils.WriteinFile(filename, d.signaturedecoder.SignaturefileJS)
+	}
 
 	//extract all the links from the
 	d.parseStreamingData()
 }
-
-// directoryname := "C:/Users/samkit jain/Desktop/goprojects/videohtmlfiles/"
-// filename := directoryname + d.videoID
-// utils.WriteinFile(filename, d.videopageHTML)
-
-// d.playerRes = videoinfo.GetPlayerResponse(d.videopageHTML)
