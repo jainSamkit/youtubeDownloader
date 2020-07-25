@@ -22,7 +22,7 @@ type Ytdownloader struct {
 	videolinkinfo types.VideoLinkInfo
 
 	//collection of videos with url,tag and video format(mp4...)
-	videotiles []types.VideoTile
+	videolinks []types.VideoLink
 
 	//response struct
 	resPipe utils.ResponsePipe
@@ -34,7 +34,7 @@ type Ytdownloader struct {
 //GetVideoID mines for the video ID from the youtube URL
 func (d *Ytdownloader) GetVideoID(url string) string {
 
-	r, _ := regexp.Compile(`v=[\w]{11}`)
+	r, _ := regexp.Compile(`v=[\w-]{11}`)
 
 	return r.FindString(url)
 }
@@ -59,31 +59,34 @@ func (d *Ytdownloader) parseStreamingData() {
 	//iterate over the formats and append info to the result
 
 	for k := range allformats {
-		var tile types.VideoTile
-		tile.SetInfo(allformats[k].(map[string]interface{}), &(d.signaturedecoder))
-		d.videotiles = append(d.videotiles, tile)
+		var link types.VideoLink
+		link.SetInfo(allformats[k].(map[string]interface{}), &(d.signaturedecoder))
+		d.videolinks = append(d.videolinks, link)
 	}
 
 	d.resPipe.Success = true
 	d.resPipe.SetError("None!")
-	d.resPipe.Info = "All video tiles are set!"
+	d.resPipe.Info = "All video links are set!"
 }
 
 //New function creates an usable downloader
 func New(url string) *Ytdownloader {
 	d := Ytdownloader{videoURL: url}
 	d.videoID = d.GetVideoID(url)
+
+	fmt.Println(d.videoID)
 	d.videopageHTML = ""
 	d.signatureJSURL = ""
 	return &d
 }
 
-//Downloadvideo gets the links to download video and starts the download.
+//GetVideoLinks gets the links to download video and starts the download.
 //If the download fails returns failure
-func (d *Ytdownloader) Downloadvideo() {
+func (d *Ytdownloader) GetVideoLinks(s string) []types.VideoLink {
+
 	if len(d.videoURL) == 0 {
 		// print("No url found!")
-		return
+		return d.videolinks
 	}
 	d.videopageHTML = d.browser.Get(d.videoURL)
 
@@ -105,4 +108,7 @@ func (d *Ytdownloader) Downloadvideo() {
 
 	//extract all the links from the
 	d.parseStreamingData()
+
+	//return all the video links
+	return d.videolinks
 }

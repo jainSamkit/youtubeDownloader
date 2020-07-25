@@ -66,6 +66,9 @@ func (v *VideoLinkInfo) SetVideoLinkInfo(videohtml string) utils.ResponsePipe {
 		resPipe.Success = false
 	}
 
+	directoryname := "C:/Users/samkit jain/Desktop/goprojects/videohtmlfiles/"
+	filename := directoryname + "player_response"
+	utils.WriteinFile(filename, v.VideolinkJSON)
 	return resPipe
 }
 
