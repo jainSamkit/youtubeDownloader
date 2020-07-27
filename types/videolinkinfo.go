@@ -12,6 +12,7 @@ import (
 type VideoLinkInfo struct {
 	VideolinkJSON string
 	StreamingData interface{}
+	VideoDetails  interface{}
 }
 
 //GetVideoLinkJSON selects the player response from the page html.
@@ -24,6 +25,9 @@ func (v *VideoLinkInfo) GetVideoLinkJSON(videohtml string) string {
 	json = strings.Replace(json, `"player_response":"`, `"player_response":`, 1)
 	r2, _ := regexp.Compile(`codecs="(.*?)"`)
 	json = r2.ReplaceAllString(json, ``)
+
+	r3, _ := regexp.Compile(`"fair use"`)
+	json = r3.ReplaceAllString(json, ``)
 
 	jsonrune := []rune(json)
 
@@ -46,6 +50,7 @@ func (v *VideoLinkInfo) SetVideoLinkInfo(videohtml string) utils.ResponsePipe {
 	v.VideolinkJSON = v.GetVideoLinkJSON(videohtml)
 
 	bytejson := []byte(v.VideolinkJSON)
+	// bytejson := json.RawMessage(v.VideolinkJSON)
 
 	var raw map[string]interface{}
 
@@ -60,15 +65,16 @@ func (v *VideoLinkInfo) SetVideoLinkInfo(videohtml string) utils.ResponsePipe {
 		linkData := raw["player_response"].(interface{})
 		linkData = linkData.(map[string]interface{})["streamingData"]
 
+		videodetail := raw["player_response"].(interface{})
+		videodetail = videodetail.(map[string]interface{})["videoDetails"]
+
+		v.VideoDetails = videodetail
 		v.StreamingData = linkData
 		resPipe.Success = true
 	} else {
 		resPipe.Success = false
 	}
 
-	directoryname := "C:/Users/samkit jain/Desktop/goprojects/videohtmlfiles/"
-	filename := directoryname + "player_response"
-	utils.WriteinFile(filename, v.VideolinkJSON)
 	return resPipe
 }
 

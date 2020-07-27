@@ -1,7 +1,6 @@
 package ytdownloader
 
 import (
-	"fmt"
 	"regexp"
 
 	"github.com/jainSamkit/youtubeDownloader/models/browser"
@@ -25,7 +24,7 @@ type Ytdownloader struct {
 	videolinks []types.VideoLink
 
 	//response struct
-	resPipe utils.ResponsePipe
+	Respipe utils.ResponsePipe
 
 	//signatureDecoder
 	signaturedecoder signaturedecoder.SignatureDecoder
@@ -42,31 +41,39 @@ func (d *Ytdownloader) GetVideoID(url string) string {
 func (d *Ytdownloader) parseStreamingData() {
 
 	streamingData := d.videolinkinfo.StreamingData
+	if streamingData == nil {
+		d.Respipe.Success = false
+		d.Respipe.SetError("Streaming data is empty.")
+		d.Respipe.Info = "No video links found!"
 
+		return
+	}
+
+	//collect formats and adaptive formats from the streaming data.
+	//The json has url or encrypted signatures to the video files.Also present are the video details such as title and short description.
 	formats := streamingData.(map[string]interface{})["formats"]
 	adaptiveFormats := streamingData.(map[string]interface{})["adaptiveFormats"]
+
+	videoDetails := d.videolinkinfo.VideoDetails
 
 	allformats := append(formats.([]interface{}), adaptiveFormats.([]interface{})...)
 
 	if len(allformats) == 0 {
-		d.resPipe.Success = false
-		d.resPipe.SetError("No video formats found!")
+		d.Respipe.Success = false
+		d.Respipe.SetError("No video formats found!")
 		return
 	}
 
-	fmt.Println("The length of formats is ", len(allformats))
-
 	//iterate over the formats and append info to the result
-
 	for k := range allformats {
 		var link types.VideoLink
-		link.SetInfo(allformats[k].(map[string]interface{}), &(d.signaturedecoder))
+		link.SetInfo(allformats[k].(map[string]interface{}), &(d.signaturedecoder), videoDetails)
 		d.videolinks = append(d.videolinks, link)
 	}
 
-	d.resPipe.Success = true
-	d.resPipe.SetError("None!")
-	d.resPipe.Info = "All video links are set!"
+	d.Respipe.Success = true
+	d.Respipe.SetError("None!")
+	d.Respipe.Info = "All video links are set!"
 }
 
 //New function creates an usable downloader
@@ -74,7 +81,6 @@ func New(url string) *Ytdownloader {
 	d := Ytdownloader{videoURL: url}
 	d.videoID = d.GetVideoID(url)
 
-	fmt.Println(d.videoID)
 	d.videopageHTML = ""
 	d.signatureJSURL = ""
 	return &d
@@ -82,7 +88,7 @@ func New(url string) *Ytdownloader {
 
 //GetVideoLinks gets the links to download video and starts the download.
 //If the download fails returns failure
-func (d *Ytdownloader) GetVideoLinks(s string) []types.VideoLink {
+func (d *Ytdownloader) GetVideoLinks() []types.VideoLink {
 
 	if len(d.videoURL) == 0 {
 		// print("No url found!")
@@ -91,7 +97,7 @@ func (d *Ytdownloader) GetVideoLinks(s string) []types.VideoLink {
 	d.videopageHTML = d.browser.Get(d.videoURL)
 
 	//set the video link information
-	d.videolinkinfo.SetVideoLinkInfo(d.videopageHTML)
+	d.Respipe = d.videolinkinfo.SetVideoLinkInfo(d.videopageHTML)
 
 	//set the signature js url
 	d.signatureJSURL = d.videolinkinfo.GetSignatureJSURL(d.videopageHTML)
@@ -106,7 +112,7 @@ func (d *Ytdownloader) GetVideoLinks(s string) []types.VideoLink {
 		// utils.WriteinFile(filename, d.signaturedecoder.SignaturefileJS)
 	}
 
-	//extract all the links from the
+	//extract all the links from the player_response
 	d.parseStreamingData()
 
 	//return all the video links

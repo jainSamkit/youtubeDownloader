@@ -28,6 +28,8 @@ type SignatureDecoder struct {
 }
 
 func reverse(s string) string {
+
+	// fmt.Println(s)
 	runes := []rune(s)
 	for i, j := 0, len(runes)-1; i < len(runes)/2; i, j = i+1, j-1 {
 
@@ -53,7 +55,7 @@ func splice(s string, val string) string {
 
 	value, _ := strconv.Atoi(val)
 	runes := []rune(s)
-	runes = runes[:value]
+	runes = runes[value:]
 	return string(runes)
 }
 
