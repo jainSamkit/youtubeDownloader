@@ -43,8 +43,8 @@ func (d *Ytdownloader) parseStreamingData() {
 	streamingData := d.videolinkinfo.StreamingData
 	if streamingData == nil {
 		d.Respipe.Success = false
-		d.Respipe.SetError("Streaming data is empty.")
-		d.Respipe.Info = "No video links found!"
+		d.Respipe.SetError("Unmarshal error.Invalid JSON")
+		d.Respipe.Info = "Streaming data is empty"
 
 		return
 	}
@@ -72,7 +72,7 @@ func (d *Ytdownloader) parseStreamingData() {
 	}
 
 	d.Respipe.Success = true
-	d.Respipe.SetError("None!")
+	d.Respipe.Err = nil
 	d.Respipe.Info = "All video links are set!"
 }
 
@@ -88,12 +88,13 @@ func New(url string) *Ytdownloader {
 
 //GetVideoLinks gets the links to download video and starts the download.
 //If the download fails returns failure
-func (d *Ytdownloader) GetVideoLinks() []types.VideoLink {
+func (d *Ytdownloader) GetVideoLinks() ([]types.VideoLink, utils.ResponsePipe) {
 
-	if len(d.videoURL) == 0 {
-		// print("No url found!")
-		return d.videolinks
+	if len(d.videoID) == 0 {
+		d.Respipe.SetError("No video ID found")
+		return d.videolinks, d.Respipe
 	}
+
 	d.videopageHTML = d.browser.Get(d.videoURL)
 
 	//set the video link information
@@ -116,5 +117,5 @@ func (d *Ytdownloader) GetVideoLinks() []types.VideoLink {
 	d.parseStreamingData()
 
 	//return all the video links
-	return d.videolinks
+	return d.videolinks, d.Respipe
 }
