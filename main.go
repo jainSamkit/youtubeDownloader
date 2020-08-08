@@ -1,56 +1,12 @@
 package main
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"log"
-	"net/http"
+	"fmt"
 
 	"github.com/jainSamkit/youtubeDownloader/models/ytdownloader"
-	"github.com/jainSamkit/youtubeDownloader/types"
 )
 
-//VideoInfo ...
-type VideoInfo struct {
-	URL     string `json:"url"`
-	Quality string `json:"quality"`
-}
-
-//ResponseData ...
-type ResponseData struct {
-	Links   []types.VideoLink `json:"links"`
-	Success bool              `json:"success"`
-	Err     string            `json:"error"`
-}
-
-func getVideoURL(w http.ResponseWriter, r *http.Request) {
-
-	info := VideoInfo{URL: "", Quality: ""}
-	body, _ := ioutil.ReadAll(r.Body)
-
-	json.Unmarshal(body, &info)
-
-	d := ytdownloader.New(info.URL)
-	videoLinks := d.GetVideoLinks()
-
-	var res ResponseData
-	if len(videoLinks) == 0 {
-		res = ResponseData{Links: videoLinks, Success: false, Err: d.Respipe.Info}
-	} else {
-		res = ResponseData{Links: videoLinks, Success: true, Err: d.Respipe.Info}
-	}
-
-	json.NewEncoder(w).Encode(res)
-}
-
-func handleRequests() {
-	http.HandleFunc("/getVideourl", getVideoURL)
-	log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
 func main() {
-
-	handleRequests()
 
 	// //url already set.
 	// // s := "https://www.youtube.com/watch?v=n1JUAR8q3LU"
@@ -58,15 +14,21 @@ func main() {
 	// // s := "https://www.youtube.com/watch?v=Uw5JOtvFd-k&t=1s"
 
 	// //json error
-	// // s := "https://www.youtube.com/watch?v=k9zTr2MAFRg"
+	// s := "https://www.youtube.com/watch?v=k9zTr2MAFRg"
+
+	// s := "https://www.youtube.com/watch?v=ldZdJJxS0m8"
+
+	s := "https://www.youtube.com/watch?v=1I-3vJSC-Vo"
 
 	// //url not set,signature set
 	// s := "https://www.youtube.com/watch?v=lFGnsdV-sR4"
 
 	// // s := "https://www.youtube.com/watch?v=2xDnxkzQtdI"
-	// d := ytdownloader.New(s)
+	d := ytdownloader.New(s)
 
-	// videolinks := d.GetVideoLinks(s)
+	videolinks := d.GetVideoLinks()
+
+	fmt.Println(len(videolinks))
 
 	// var videoURL string
 
