@@ -104,14 +104,14 @@ func (d *Ytdownloader) GetVideoLinks() ([]types.VideoLink, utils.ResponsePipe) {
 	d.signatureJSURL = d.videolinkinfo.GetSignatureJSURL(d.videopageHTML)
 
 	//fetch the js file that contains the signatute encoding info
-	if d.signatureJSURL != "" {
-		d.signaturedecoder.SignaturefileJS = d.browser.Get(d.signatureJSURL)
-		d.signaturedecoder.ExtractDecoder()
-		// fmt.Println("The length of sig is ", len(d.signaturedecoder.SignaturefileJS))
-		// directoryname := "C:/Users/samkit jain/Desktop/goprojects/videohtmlfiles/"
-		// filename := directoryname + "videojs"
-		// utils.WriteinFile(filename, d.signaturedecoder.SignaturefileJS)
-	}
+	// if d.signatureJSURL != "" {
+	// 	d.signaturedecoder.SignaturefileJS = d.browser.Get(d.signatureJSURL)
+	// 	d.signaturedecoder.ExtractDecoder()
+	// 	// fmt.Println("The length of sig is ", len(d.signaturedecoder.SignaturefileJS))
+	// 	// directoryname := "C:/Users/samkit jain/Desktop/goprojects/videohtmlfiles/"
+	// 	// filename := directoryname + "videojs"
+	// 	// utils.WriteinFile(filename, d.signaturedecoder.SignaturefileJS)
+	// }
 
 	//extract all the links from the player_response
 	d.parseStreamingData()

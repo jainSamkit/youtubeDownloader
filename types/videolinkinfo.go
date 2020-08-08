@@ -18,6 +18,7 @@ type VideoLinkInfo struct {
 //GetVideoLinkJSON selects the player response from the page html.
 func (v *VideoLinkInfo) GetVideoLinkJSON(videohtml string) string {
 
+	// fmt.Println(videohtml)
 	r, _ := regexp.Compile(`"player_response":"(.*?)","`)
 	json := r.FindString(videohtml)
 
@@ -26,8 +27,11 @@ func (v *VideoLinkInfo) GetVideoLinkJSON(videohtml string) string {
 	r2, _ := regexp.Compile(`codecs="(.*?)"`)
 	json = r2.ReplaceAllString(json, ``)
 
-	r3, _ := regexp.Compile(`"fair use"`)
-	json = r3.ReplaceAllString(json, ``)
+	// r3, _ := regexp.Compile(`"(.*)"[\w-_.]"(.*)"`)
+	// json = r3.FindString(json)
+
+	// fmt.Println("Printing json")
+	// fmt.Println(json)
 
 	jsonrune := []rune(json)
 
@@ -42,6 +46,34 @@ func (v *VideoLinkInfo) GetVideoLinkJSON(videohtml string) string {
 	return json
 }
 
+//RemoveOffending removes any offending string of type(" simpleText: "Hello "Go" !")
+func (v *VideoLinkInfo) RemoveOffending(bytejson []byte, offendChar string) ([]byte, bool) {
+
+	// "simpleText": "Just a guy from the end of the world making Motivational videos to inspire everyone who is looking for some "
+	// motivation " or advice on life."
+
+	//Below function finds : "Just a guy from the end of the world making Motivational videos to inspire everyone who is looking for some "motivation"
+	r, _ := regexp.Compile(`:\s*"` + `[^"]*?` + `("` + offendChar + `[^"]*?")`)
+
+	offendingString := r.FindStringSubmatch(string(bytejson))
+
+	if len(offendingString) > 1 {
+		completeString := string(offendingString[0])
+		fatalString := string(offendingString[1])
+		replaceString := strings.ReplaceAll(fatalString, `"`, ``)
+		finalString := strings.ReplaceAll(completeString, fatalString, replaceString)
+		modifiedString := r.ReplaceAllString(string(bytejson), finalString)
+
+		// directoryname := "C:/Users/samkit jain/Desktop/goprojects/videohtmlfiles/"
+		// filename := directoryname + "modified_json"
+		// utils.WriteinFile(filename, modifiedString)
+
+		return []byte(modifiedString), false
+	} else {
+		return bytejson, true
+	}
+}
+
 //SetVideoLinkInfo mines out the player_response json and stores it in a map
 func (v *VideoLinkInfo) SetVideoLinkInfo(videohtml string) utils.ResponsePipe {
 
@@ -50,14 +82,27 @@ func (v *VideoLinkInfo) SetVideoLinkInfo(videohtml string) utils.ResponsePipe {
 	v.VideolinkJSON = v.GetVideoLinkJSON(videohtml)
 
 	bytejson := []byte(v.VideolinkJSON)
-	// bytejson := json.RawMessage(v.VideolinkJSON)
+
+	// directoryname := "C:/Users/samkit jain/Desktop/goprojects/videohtmlfiles/"
+	// filename := directoryname + "player_res_json"
+	// utils.WriteBytesinFile(filename, bytejson)
 
 	var raw map[string]interface{}
 
 	//unmarshall bytejson to raw structure
+
 	err := json.Unmarshal(bytejson, &raw)
 
-	resPipe.Err = err
+	for err != nil {
+		r4, _ := regexp.Compile(`invalid character '(.*)'`)
+		errorJSON := r4.FindStringSubmatch(err.Error())
+		offendChar := errorJSON[1]
+		bytejson, isBreak := v.RemoveOffending(bytejson, offendChar)
+		err = json.Unmarshal(bytejson, &raw)
+		if isBreak {
+			break
+		}
+	}
 
 	if err == nil {
 		//Heirarchy of streamingData ==> player_response-->responseContext-->streamingData.
