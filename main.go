@@ -29,24 +29,16 @@ func Handler(ctx context.Context, req events.APIGatewayProxyRequest) (events.API
 	body := []byte(req.Body)
 	err := json.Unmarshal(body, &videoURL)
 
-<<<<<<< HEAD
 	if err != nil {
+
 		return events.APIGatewayProxyResponse{StatusCode: 400, Body: err.Error()}, nil
 	}
-=======
-	// //json error
-	s := "https://www.youtube.com/watch?v=k9zTr2MAFRg"
->>>>>>> master
 
 	d := ytdownloader.New(videoURL.URL)
 	videoLinks, responsePipe := d.GetVideoLinks()
 
-<<<<<<< HEAD
 	res := ResponseData{}
 	res.Links = videoLinks
-=======
-	// s := "https://www.youtube.com/watch?v=1I-3vJSC-Vo"
->>>>>>> master
 
 	if responsePipe.Err != nil {
 		res.ERROR = responsePipe.Err.Error()
