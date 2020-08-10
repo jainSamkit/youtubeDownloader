@@ -14,11 +14,11 @@ func main() {
 	// // s := "https://www.youtube.com/watch?v=Uw5JOtvFd-k&t=1s"
 
 	// //json error
-	// s := "https://www.youtube.com/watch?v=k9zTr2MAFRg"
+	s := "https://www.youtube.com/watch?v=k9zTr2MAFRg"
 
 	// s := "https://www.youtube.com/watch?v=ldZdJJxS0m8"
 
-	s := "https://www.youtube.com/watch?v=1I-3vJSC-Vo"
+	// s := "https://www.youtube.com/watch?v=1I-3vJSC-Vo"
 
 	// //url not set,signature set
 	// s := "https://www.youtube.com/watch?v=lFGnsdV-sR4"
